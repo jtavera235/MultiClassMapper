@@ -1,21 +1,21 @@
+mod deparser;
 mod models;
 mod objects;
 mod parser;
-mod deparser;
 
+use crate::deparser::DeParser;
+use crate::models::Language;
+use crate::parser::Parser;
 use std::env;
 use std::fs::File;
-use std::path::Path;
 use std::io::prelude::*;
-use crate::parser::Parser;
-use crate::models::Language;
-use crate::deparser::DeParser;
+use std::path::Path;
 
-fn adjust_field_syntax(token: &String)-> String {
+fn adjust_field_syntax(token: &str) -> String {
     let mut tok = String::from("");
     let mut start_lowercase = false;
     for c in token.chars() {
-        if c.is_ascii_uppercase() && start_lowercase == true {
+        if c.is_ascii_uppercase() && start_lowercase {
             tok = camel_to_underscore(token);
             break;
         } else if c == '_' {
@@ -26,45 +26,53 @@ fn adjust_field_syntax(token: &String)-> String {
     tok
 }
 
-fn camel_to_underscore(token: &String) -> String {
-    println!("the current token {:?} needs to be changed to underscore", token);
-    token.clone()
+fn camel_to_underscore(token: &str) -> String {
+    println!(
+        "the current token {:?} needs to be changed to underscore",
+        token
+    );
+    token.to_string()
 }
 
-fn underscore_to_camel(token: &String) -> String {
-    println!("the current token {:?} needs to be changed to underscore", token);
-    token.clone()
+fn underscore_to_camel(token: &str) -> String {
+    println!(
+        "the current token {:?} needs to be changed to underscore",
+        token
+    );
+    token.to_string()
 }
 
-fn validate_token(token: &String, token_type: String) {
+fn validate_token(token: &str, token_type: String) {
     assert!(token_type.as_str() == "field" || token_type.as_str() == "value");
-    if token.contains(" ") {
-        panic!("Current {:?} contains an invalid character {:?}", token_type, token);
+    if token.contains(' ') {
+        panic!(
+            "Current {:?} contains an invalid character {:?}",
+            token_type, token
+        );
     }
 }
 
-fn open_file(file: &String) -> File {
+fn open_file(file: &str) -> File {
     println!("About to open the file {:?}", file);
     let input_path = Path::new(file);
-    let file = match File::open(&input_path) {
+    match File::open(&input_path) {
         Ok(f) => f,
         Err(e) => panic!("Error opening file. Error message: \n {:?}", e),
-    };
-    file
+    }
 }
 
-fn create_file(file: &String) -> File {
+fn create_file(file: &str) -> File {
     println!("Creating the file {:?}", file);
     let input_path = Path::new(file);
-    let file = match File::create(&input_path) {
+    match File::create(&input_path) {
         Ok(f) => f,
         Err(e) => panic!("Error creating file. Error message: \n {:?}", e),
-    };
-    file
+    }
 }
 
-fn write_file(file: &mut File, buffer: &String) {
-    file.write_all(buffer.as_bytes()).expect("unable to write to file");
+fn write_file(file: &mut File, buffer: &str) {
+    file.write_all(buffer.as_bytes())
+        .expect("unable to write to file");
 }
 
 fn get_file_buffer(file: &mut File) -> Vec<String> {
@@ -73,13 +81,15 @@ fn get_file_buffer(file: &mut File) -> Vec<String> {
         Ok(_s) => (),
         Err(_e) => panic!("Error reading the input file"),
     }
-    let mut buffer_vector: Vec<&str> = buffer.split(|c| c == '\n' || c == ' ' || c == '\t').collect();
-    buffer_vector.retain(|&c| c != "");
+    let mut buffer_vector: Vec<&str> = buffer
+        .split(|c| c == '\n' || c == ' ' || c == '\t')
+        .collect();
+    buffer_vector.retain(|&c| !c.is_empty());
     let strings = buffer_vector.iter().map(|s| s.to_string()).collect();
     strings
 }
 
-fn check_if_brackets_align(buf: &Vec<String>) -> bool {
+fn check_if_brackets_align(buf: &[String]) -> bool {
     let mut stack = Vec::new();
 
     for n in 0..buf.len() {
@@ -88,7 +98,7 @@ fn check_if_brackets_align(buf: &Vec<String>) -> bool {
             None => panic!("Error getting buffer"),
         };
         if val.as_str() == "}" {
-            if stack.len() == 0 {
+            if stack.is_empty() {
                 println!("Stack is not aligned, invalid closing and opening brackets");
                 return false;
             } else {
@@ -104,9 +114,8 @@ fn check_if_brackets_align(buf: &Vec<String>) -> bool {
             stack.push(val);
         }
     }
-    return stack.len() == 0;
+    stack.is_empty()
 }
-
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -115,7 +124,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    let input_string= match args.get(1) {
+    let input_string = match args.get(1) {
         Some(s) => s,
         None => panic!("Error reading input file path."),
     };
@@ -145,7 +154,7 @@ fn main() {
     } else if output_string.clone().contains(".rs") {
         language = Language::RUST;
     }
-    let mut deparser = DeParser::new(parser.get_objects(), language); 
+    let mut deparser = DeParser::new(parser.get_objects(), language);
     deparser.construct();
     write_file(&mut output_file, &deparser.get_output());
     println!("Successfully mapped classes.")

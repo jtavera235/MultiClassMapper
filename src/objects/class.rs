@@ -1,5 +1,5 @@
+use crate::models::{ArrayType, FieldType};
 use crate::objects::fields::Field;
-use crate::models::{FieldType, ArrayType};
 
 #[derive(Clone, Debug)]
 pub struct Class {
@@ -10,7 +10,7 @@ pub struct Class {
 impl Class {
     pub fn new(name: String) -> Class {
         Class {
-            name: name,
+            name,
             fields: Vec::new(),
         }
     }
@@ -19,12 +19,8 @@ impl Class {
         self.fields.push(field.clone());
     }
 
-    pub fn get_fields(&self) -> Vec<Field> {
-        return self.fields.clone();
-    }
-
     pub fn get_name(&self) -> String {
-        return self.name.clone();
+         self.name.clone()
     }
 
     pub fn get_java_fields(&self) -> String {
@@ -34,7 +30,7 @@ impl Class {
                 Some(f) => f,
                 None => panic!(""),
             };
-            fields.push_str("\t");
+            fields.push('\t');
             match field.get_field_type() {
                 FieldType::STRING => fields.push_str("String"),
                 FieldType::INTEGER => fields.push_str("int"),
@@ -59,11 +55,11 @@ impl Class {
                 FieldType::LIST(ArrayType::CUSTOM(name)) => {
                     fields.push_str("List<");
                     fields.push_str(name.as_str());
-                    fields.push_str(">")
+                    fields.push('>')
                 }
                 _ => (),
             }
-            fields.push_str(" ");
+            fields.push(' ');
             fields.push_str(field.get_name().as_str());
             fields.push_str("; \n");
         }
@@ -77,10 +73,10 @@ impl Class {
                 Some(f) => f,
                 None => panic!(""),
             };
-            fields.push_str("\t");
+            fields.push('\t');
             fields.push_str(field.get_name().as_str());
-            fields.push_str(":");
-            fields.push_str(" ");
+            fields.push(':');
+            fields.push(' ');
             match field.get_field_type() {
                 FieldType::STRING => fields.push_str("string"),
                 FieldType::INTEGER => fields.push_str("number"),
@@ -105,7 +101,7 @@ impl Class {
                 FieldType::LIST(ArrayType::CUSTOM(name)) => {
                     fields.push_str("Array<");
                     fields.push_str(name.as_str());
-                    fields.push_str(">")
+                    fields.push('>')
                 }
                 _ => (),
             }
@@ -121,7 +117,7 @@ impl Class {
                 Some(f) => f,
                 None => panic!(""),
             };
-            fields.push_str("\t");
+            fields.push('\t');
             match field.get_field_type() {
                 FieldType::STRING => fields.push_str("char*"),
                 FieldType::INTEGER => fields.push_str("int"),
@@ -139,7 +135,7 @@ impl Class {
                 FieldType::ARRAY(ArrayType::BOOL) => fields.push_str("bool*"),
                 FieldType::ARRAY(ArrayType::CUSTOM(name)) => {
                     fields.push_str(name.as_str());
-                    fields.push_str("*")
+                    fields.push('*')
                 }
                 FieldType::LIST(ArrayType::INTEGER) => fields.push_str("int*"),
                 FieldType::LIST(ArrayType::STRING) => fields.push_str("char*"),
@@ -148,11 +144,11 @@ impl Class {
                 FieldType::LIST(ArrayType::BOOL) => fields.push_str("bool*"),
                 FieldType::LIST(ArrayType::CUSTOM(name)) => {
                     fields.push_str(name.as_str());
-                    fields.push_str("*")
+                    fields.push('*')
                 }
                 _ => (),
             }
-            fields.push_str(" ");
+            fields.push(' ');
             fields.push_str(field.get_name().as_str());
             fields.push_str("; \n");
         }
@@ -183,7 +179,7 @@ impl Class {
                 FieldType::ARRAY(ArrayType::BOOL) => fields.push_str("boolean*"),
                 FieldType::ARRAY(ArrayType::CUSTOM(name)) => {
                     fields.push_str(name.as_str());
-                    fields.push_str("*")
+                    fields.push('*')
                 }
                 FieldType::LIST(ArrayType::INTEGER) => fields.push_str("vector<int>"),
                 FieldType::LIST(ArrayType::STRING) => fields.push_str("vector<string>"),
@@ -193,15 +189,15 @@ impl Class {
                 FieldType::LIST(ArrayType::CUSTOM(name)) => {
                     fields.push_str("vector<");
                     fields.push_str(name.as_str());
-                    fields.push_str(">")
+                    fields.push('>')
                 }
                 _ => (),
             }
-            fields.push_str(" ");
+            fields.push(' ');
             fields.push_str(field.get_name().as_str());
             fields.push_str(";\n\t\t");
         }
-        fields.push_str("\n");
+        fields.push('\n');
         fields
     }
 
@@ -230,9 +226,9 @@ impl Class {
                 FieldType::ARRAY(ArrayType::DOUBLE) => fields.push_str("[f64]"),
                 FieldType::ARRAY(ArrayType::BOOL) => fields.push_str("[bool]"),
                 FieldType::ARRAY(ArrayType::CUSTOM(name)) => {
-                    fields.push_str("[");
+                    fields.push('[');
                     fields.push_str(name.as_str());
-                    fields.push_str("]");
+                    fields.push(']');
                 }
                 FieldType::LIST(ArrayType::INTEGER) => fields.push_str("Vec<i32>"),
                 FieldType::LIST(ArrayType::STRING) => fields.push_str("Vec<String>"),
@@ -242,13 +238,13 @@ impl Class {
                 FieldType::LIST(ArrayType::CUSTOM(name)) => {
                     fields.push_str("Vec<");
                     fields.push_str(name.as_str());
-                    fields.push_str(">")
+                    fields.push('>')
                 }
                 _ => (),
             }
-            fields.push_str(",");
+            fields.push(',');
         }
-        fields.push_str("\n");
+        fields.push('\n');
         fields
     }
 }

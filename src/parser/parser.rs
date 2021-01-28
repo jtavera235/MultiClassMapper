@@ -1,6 +1,5 @@
-use crate::models::{ParseState, FieldType, ArrayType};
+use crate::models::{ArrayType, FieldType, ParseState};
 use crate::objects::{Class, Field};
-
 
 #[derive(Clone, Debug)]
 pub struct Parser {
@@ -13,7 +12,7 @@ pub struct Parser {
 
 impl Parser {
     pub fn new() -> Parser {
-        let class : Vec<Class> = Vec::new();
+        let class: Vec<Class> = Vec::new();
         Parser {
             objects: class,
             parse_state: ParseState::CLASS,
@@ -28,23 +27,23 @@ impl Parser {
     }
 
     pub fn get_current_class(&self) -> Option<Class> {
-        return self.current_class.clone();
+        self.current_class.clone()
     }
 
     pub fn get_current_field(&self) -> Option<String> {
-        return self.current_field_name.clone();
+        self.current_field_name.clone()
     }
 
     pub fn get_objects(&self) -> Vec<Class> {
-        return self.objects.clone();
+        self.objects.clone()
     }
 
     pub fn set_current_class(&mut self, class: &Class) {
         self.current_class = Some(class.clone());
     }
 
-    pub fn set_current_field(&mut self, field: &String) {
-        self.current_field_name = Some(field.clone());
+    pub fn set_current_field(&mut self, field: &str) {
+        self.current_field_name = Some(field.to_string());
     }
 
     pub fn reset_current_class(&mut self) {
@@ -55,7 +54,7 @@ impl Parser {
         self.current_field_name = None;
     }
 
-    pub fn parse(&mut self, content: &Vec<String>) {
+    pub fn parse(&mut self, content: &[String]) {
         for _n in self.index..content.len() {
             match self.parse_state {
                 ParseState::CLASS => self.handle_class(content),
@@ -65,7 +64,7 @@ impl Parser {
         }
     }
 
-    pub fn handle_class(&mut self, tokens: &Vec<String>) {
+    pub fn handle_class(&mut self, tokens: &[String]) {
         let token = match tokens.get(self.index) {
             Some(t) => t,
             None => panic!("No value found in tokens"),
@@ -76,27 +75,27 @@ impl Parser {
             None => Class::new(token.to_string()),
         };
         self.set_current_class(&class);
-        self.index = self.index + 1;
+        self.index += 1;
         self.parse_state = ParseState::FieldT;
     }
 
-    pub fn handle_field_t(&mut self, tokens: &Vec<String>) {
+    pub fn handle_field_t(&mut self, tokens: &[String]) {
         let token = match tokens.get(self.index) {
             Some(t) => t,
             None => panic!("No value found in tokens"),
         };
-        if token != "{" && token.contains(":") {
+        if token != "{" && token.contains(':') {
             let mut token_cpy = token.clone();
-            token_cpy.truncate(token_cpy.len() -1);
+            token_cpy.truncate(token_cpy.len() - 1);
             self.set_current_field(&token_cpy);
             self.parse_state = ParseState::FieldN;
         } else if token != "{" {
             panic!("Unknown field name specified {:?}", token);
         }
-        self.index = self.index + 1;
+        self.index += 1;
     }
 
-    pub fn handle_field_n(&mut self, tokens: &Vec<String>) {
+    pub fn handle_field_n(&mut self, tokens: &[String]) {
         let token = match tokens.get(self.index) {
             Some(t) => t,
             None => panic!("No value found in tokens"),
@@ -105,7 +104,7 @@ impl Parser {
             Some(c) => c,
             None => panic!("There should be a current class"),
         };
-        let is_last_field = token.contains(",");
+        let is_last_field = token.contains(',');
 
         if token == "{" {
             panic!("Cannot have an opening brace as a field.");
@@ -119,7 +118,7 @@ impl Parser {
         } else {
             let mut token_cpy = token.clone();
             if is_last_field {
-                token_cpy.truncate(token_cpy.len() -1);
+                token_cpy.truncate(token_cpy.len() - 1);
             }
             let field_type: FieldType;
             if token_cpy == "String" {
@@ -132,10 +131,12 @@ impl Parser {
                 field_type = FieldType::DOUBLE;
             } else if token_cpy == "char" {
                 field_type = FieldType::CHAR;
-            } else if token_cpy.contains("[") && token_cpy.contains("]") {
+            } else if token_cpy.contains('[') && token_cpy.contains(']') {
                 let open_bracket_index = token_cpy.find('[').unwrap();
                 let closed_bracket_index = token_cpy.find(']').unwrap();
-                let array_type = token_cpy.get(open_bracket_index + 1..closed_bracket_index).unwrap();
+                let array_type = token_cpy
+                    .get(open_bracket_index + 1..closed_bracket_index)
+                    .unwrap();
                 match array_type {
                     "String" => field_type = FieldType::ARRAY(ArrayType::STRING),
                     "int" => field_type = FieldType::ARRAY(ArrayType::INTEGER),
@@ -144,10 +145,12 @@ impl Parser {
                     "double" => field_type = FieldType::ARRAY(ArrayType::DOUBLE),
                     _ => field_type = FieldType::ARRAY(ArrayType::CUSTOM(String::from(array_type))),
                 }
-            } else if token_cpy.contains("<") && token_cpy.contains(">") {
+            } else if token_cpy.contains('<') && token_cpy.contains('>') {
                 let open_bracket_index = token_cpy.find('<').unwrap();
                 let closed_bracket_index = token_cpy.find('>').unwrap();
-                let array_type = token_cpy.get(open_bracket_index + 1..closed_bracket_index).unwrap();
+                let array_type = token_cpy
+                    .get(open_bracket_index + 1..closed_bracket_index)
+                    .unwrap();
                 match array_type {
                     "String" => field_type = FieldType::LIST(ArrayType::STRING),
                     "int" => field_type = FieldType::LIST(ArrayType::INTEGER),
@@ -171,6 +174,6 @@ impl Parser {
             }
         }
         self.reset_current_field();
-        self.index = self.index + 1;
+        self.index += 1;
     }
 }

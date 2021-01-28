@@ -1,5 +1,5 @@
-mod fields;
 mod class;
+mod fields;
 
-pub use fields::*;
 pub use class::*;
+pub use fields::*;

@@ -17,11 +17,11 @@ impl DeParser {
     }
 
     pub fn get_language(&self) -> Language {
-        return self.language.clone();
+        self.language.clone()
     }
 
     pub fn get_output(&self) -> String {
-        return self.output.clone();
+        self.output.clone()
     }
 
     pub fn construct(&mut self) {
