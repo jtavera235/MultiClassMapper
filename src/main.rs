@@ -2,6 +2,8 @@ mod deparser;
 mod models;
 mod objects;
 mod parser;
+mod user_env;
+mod common;
 
 use crate::deparser::DeParser;
 use crate::models::Language;
@@ -11,62 +13,36 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
-fn adjust_field_syntax(token: &str) -> String {
-    let mut tok = String::from("");
-    let mut start_lowercase = false;
-    for c in token.chars() {
-        if c.is_ascii_uppercase() && start_lowercase {
-            tok = camel_to_underscore(token);
-            break;
-        } else if c == '_' {
-            tok = underscore_to_camel(token);
-            break;
-        }
-    }
-    tok
-}
+use common::handle_result_error;
+use common::MError;
+use colored::Colorize;
 
-fn camel_to_underscore(token: &str) -> String {
-    println!(
-        "the current token {:?} needs to be changed to underscore",
-        token
-    );
-    token.to_string()
-}
-
-fn underscore_to_camel(token: &str) -> String {
-    println!(
-        "the current token {:?} needs to be changed to underscore",
-        token
-    );
-    token.to_string()
-}
-
-fn validate_token(token: &str, token_type: String) {
-    assert!(token_type.as_str() == "field" || token_type.as_str() == "value");
-    if token.contains(' ') {
-        panic!(
-            "Current {:?} contains an invalid character {:?}",
-            token_type, token
-        );
-    }
-}
 
 fn open_file(file: &str) -> File {
-    println!("About to open the file {:?}", file);
+    println!("{} {:?}", "About to open the file".green(), file);
     let input_path = Path::new(file);
     match File::open(&input_path) {
         Ok(f) => f,
-        Err(e) => panic!("Error opening file. Error message: \n {:?}", e),
+        Err(e) => {
+            let mut message = "Error opening file: ".to_string();
+            message.push_str(file);
+            handle_result_error(MError::GenError(message));
+            Err(e).unwrap()
+        },
     }
 }
 
 fn create_file(file: &str) -> File {
-    println!("Creating the file {:?}", file);
+    println!("{} {:?}", "Creating the file".green(), file);
     let input_path = Path::new(file);
     match File::create(&input_path) {
         Ok(f) => f,
-        Err(e) => panic!("Error creating file. Error message: \n {:?}", e),
+        Err(e) => {
+            let mut message = "Error creating file: ".to_string();
+            message.push_str(file);
+            handle_result_error(MError::GenError(message));
+            Err(e).unwrap()
+        },
     }
 }
 
@@ -75,11 +51,15 @@ fn write_file(file: &mut File, buffer: &str) {
         .expect("unable to write to file");
 }
 
-fn get_file_buffer(file: &mut File) -> Vec<String> {
+fn get_file_buffer(file: &mut File, filename: &str) -> Vec<String> {
     let mut buffer = String::new();
     match file.read_to_string(&mut buffer) {
         Ok(_s) => (),
-        Err(_e) => panic!("Error reading the input file"),
+        Err(_e) => {
+            let mut message = "Error reading file: ".to_string();
+            message.push_str(filename);
+            handle_result_error(MError::GenError(message))
+        },
     }
     let mut buffer_vector: Vec<&str> = buffer
         .split(|c| c == '\n' || c == ' ' || c == '\t')
@@ -89,59 +69,76 @@ fn get_file_buffer(file: &mut File) -> Vec<String> {
     strings
 }
 
-fn check_if_brackets_align(buf: &[String]) -> bool {
+fn check_if_brackets_align(buf: &[String]) {
     let mut stack = Vec::new();
 
     for n in 0..buf.len() {
         let val = match buf.get(n) {
             Some(s) => s,
-            None => panic!("Error getting buffer"),
+            None => {
+                let message = "Error occurred while parsing file for bracket verification".to_string();
+                handle_result_error(MError::GenError(message));
+                panic!()
+            },
         };
         if val.as_str() == "}" {
             if stack.is_empty() {
-                println!("Stack is not aligned, invalid closing and opening brackets");
-                return false;
+                let message = "Error occurred while checking for bracket verification.
+                File contains an extra `}`".to_string();
+                handle_result_error(MError::ParseError(message));
             } else {
                 let top_v = match stack.pop() {
                     Some(v) => v,
-                    None => panic!("Stack is not aligned. Invalid closing and opening brackets"),
+                    None => {
+                        let message = "Error occurred while parsing file for bracket verification.
+                        File contains an extra `{`".to_string();
+                        handle_result_error(MError::ParseError(message));
+                        ""
+                    },
                 };
                 if top_v != "{" {
-                    return false;
+                    let message = "Unknown error occurred while parsing file for bracket verification.
+                        Bracket stack is not aligned".to_string();
+                    handle_result_error(MError::ParseError(message));
                 }
             }
         } else if val.as_str() == "{" {
             stack.push(val);
         }
     }
-    stack.is_empty()
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 {
-        println!("Incorrect number of command line arguments specified");
-        std::process::exit(1);
+        let message = "Incorrect number of arguments. Expected 2 arguments".to_string();
+        handle_result_error(MError::GenError(message));
     }
 
     let input_string = match args.get(1) {
         Some(s) => s,
-        None => panic!("Error reading input file path."),
+        None => {
+            let message = "Error occurred obtaining input file name.".to_string();
+            handle_result_error(MError::GenError(message));
+            panic!()
+        },
     };
     let output_string = match args.get(2) {
         Some(s) => s,
-        None => panic!("Error reading output file path."),
+        None => {
+            let message = "Error occurred obtaining output file name.".to_string();
+            handle_result_error(MError::GenError(message));
+            panic!()
+        },
     };
     let mut input_file = open_file(input_string);
     let mut output_file = create_file(output_string);
     let mut parser = Parser::new();
-    let file_content = get_file_buffer(&mut input_file);
-    match check_if_brackets_align(&file_content) {
-        true => (),
-        false => std::process::exit(1),
-    }
-    parser.parse(&file_content);
+    let file_content = get_file_buffer(&mut input_file,
+                                       output_string.as_str());
+    check_if_brackets_align(&file_content);
 
+    parser.parse(&file_content);
     let mut language = Language::JAVA;
     if output_string.clone().contains(".java") {
         language = Language::JAVA;
@@ -157,5 +154,5 @@ fn main() {
     let mut deparser = DeParser::new(parser.get_objects(), language);
     deparser.construct();
     write_file(&mut output_file, &deparser.get_output());
-    println!("Successfully mapped classes.")
+    println!("{}", "Successfully mapped classes.".green());
 }

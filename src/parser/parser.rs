@@ -1,5 +1,7 @@
 use crate::models::{ArrayType, FieldType, ParseState};
 use crate::objects::{Class, Field};
+use crate::common::MError;
+use crate::common::handle_result_error;
 
 #[derive(Clone, Debug)]
 pub struct Parser {
@@ -67,7 +69,11 @@ impl Parser {
     pub fn handle_class(&mut self, tokens: &[String]) {
         let token = match tokens.get(self.index) {
             Some(t) => t,
-            None => panic!("No value found in tokens"),
+            None => {
+                let message = "Token not found for the current class index.".to_string();
+                handle_result_error(MError::ParseError(message));
+                panic!()
+            },
         };
 
         let class = match self.get_current_class() {
@@ -82,7 +88,11 @@ impl Parser {
     pub fn handle_field_t(&mut self, tokens: &[String]) {
         let token = match tokens.get(self.index) {
             Some(t) => t,
-            None => panic!("No value found in tokens"),
+            None => {
+                let message = "Token not found for the current value index.".to_string();
+                handle_result_error(MError::ParseError(message));
+                panic!()
+            },
         };
         if token != "{" && token.contains(':') {
             let mut token_cpy = token.clone();
@@ -90,7 +100,10 @@ impl Parser {
             self.set_current_field(&token_cpy);
             self.parse_state = ParseState::FieldN;
         } else if token != "{" {
-            panic!("Unknown field name specified {:?}", token);
+            let mut message = "Unknown token found. Expected field but found '".to_string();
+            message.push_str(token);
+            message.push_str("'");
+            handle_result_error(MError::ParseError(message));
         }
         self.index += 1;
     }
@@ -98,16 +111,26 @@ impl Parser {
     pub fn handle_field_n(&mut self, tokens: &[String]) {
         let token = match tokens.get(self.index) {
             Some(t) => t,
-            None => panic!("No value found in tokens"),
+            None => {
+                let message = "Token not found for the current field type index.".to_string();
+                handle_result_error(MError::ParseError(message));
+                panic!()
+            },
         };
         let mut current_class = match self.get_current_class() {
             Some(c) => c,
-            None => panic!("There should be a current class"),
+            None => {
+                let message = "Expected to find a class but none were found. Verify that braces are set correctly.".to_string();
+                handle_result_error(MError::ParseError(message));
+                panic!()
+            },
         };
         let is_last_field = token.contains(',');
 
         if token == "{" {
-            panic!("Cannot have an opening brace as a field.");
+            let message = "Cannot have `{` as a field type.".to_string();
+            handle_result_error(MError::ParseError(message));
+            panic!()
         }
 
         if token == "}" {
@@ -164,7 +187,11 @@ impl Parser {
             }
             match self.get_current_field() {
                 Some(_s) => (),
-                None => panic!("Error occurred while parsing."),
+                None => {
+                    let message = "Error getting the value of the current field".to_string();
+                    handle_result_error(MError::ParseError(message));
+                    panic!()
+                },
             }
             let field = Field::new(self.get_current_field().unwrap(), field_type);
             current_class.add_field(&field);

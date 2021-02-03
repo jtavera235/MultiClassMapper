@@ -1,5 +1,6 @@
 use crate::models::Language;
 use crate::objects::{Class, Field};
+use crate::common::{handle_result_error, MError};
 
 pub struct DeParser {
     pub objects: Vec<Class>,
@@ -38,7 +39,11 @@ impl DeParser {
         for n in 0..self.objects.len() {
             let class = match self.objects.get(n) {
                 Some(c) => c,
-                None => panic!("Error getting class"),
+                None => {
+                    let message = "Error trying to construct the current Java class".to_string();
+                    handle_result_error(MError::ClassError(message));
+                    panic!()
+                },
             };
             self.output.push_str("class ");
             self.output.push_str(class.get_name().as_str());
@@ -53,7 +58,11 @@ impl DeParser {
         for n in 0..self.objects.len() {
             let class = match self.objects.get(n) {
                 Some(c) => c,
-                None => panic!("Error getting class"),
+                None => {
+                    let message = "Error trying to construct the current Typescript class".to_string();
+                    handle_result_error(MError::DeparseError(message));
+                    panic!()
+                },
             };
             self.output.push_str("class ");
             self.output.push_str(class.get_name().as_str());
@@ -68,7 +77,11 @@ impl DeParser {
         for n in 0..self.objects.len() {
             let class = match self.objects.get(n) {
                 Some(c) => c,
-                None => panic!("Error getting class"),
+                None => {
+                    let message = "Error trying to construct the current C struct".to_string();
+                    handle_result_error(MError::DeparseError(message));
+                    panic!()
+                },
             };
             self.output.push_str("typedef struct ");
             self.output.push_str(class.get_name().as_str());
@@ -85,7 +98,11 @@ impl DeParser {
         for n in 0..self.objects.len() {
             let class = match self.objects.get(n) {
                 Some(c) => c,
-                None => panic!("Error getting class"),
+                None => {
+                    let message = "Error trying to construct the current C++ class".to_string();
+                    handle_result_error(MError::DeparseError(message));
+                    panic!()
+                },
             };
             self.output.push_str("class ");
             self.output.push_str(class.get_name().as_str());
@@ -100,7 +117,11 @@ impl DeParser {
         for n in 0..self.objects.len() {
             let class = match self.objects.get(n) {
                 Some(c) => c,
-                None => panic!("Error getting class"),
+                None => {
+                    let message = "Error trying to construct the current Rust struct".to_string();
+                    handle_result_error(MError::DeparseError(message));
+                    panic!()
+                },
             };
             self.output.push_str("struct ");
             self.output.push_str(class.get_name().as_str());

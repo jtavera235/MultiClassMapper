@@ -1,5 +1,7 @@
 use crate::models::{ArrayType, FieldType};
 use crate::objects::fields::Field;
+use crate::common::MError;
+use crate::common::handle_result_error;
 
 #[derive(Clone, Debug)]
 pub struct Class {
@@ -28,7 +30,11 @@ impl Class {
         for n in 0..self.fields.len() {
             let field = match self.fields.get(n) {
                 Some(f) => f,
-                None => panic!(""),
+                None => {
+                    let message = "Error trying to get the fields for the current Java class".to_string();
+                    handle_result_error(MError::ClassError(message));
+                    panic!()
+                },
             };
             fields.push('\t');
             match field.get_field_type() {
@@ -71,7 +77,11 @@ impl Class {
         for n in 0..self.fields.len() {
             let field = match self.fields.get(n) {
                 Some(f) => f,
-                None => panic!(""),
+                None => {
+                    let message = "Error trying to get the fields for the current Typescript class".to_string();
+                    handle_result_error(MError::ClassError(message));
+                    panic!()
+                },
             };
             fields.push('\t');
             fields.push_str(field.get_name().as_str());
@@ -115,7 +125,11 @@ impl Class {
         for n in 0..self.fields.len() {
             let field = match self.fields.get(n) {
                 Some(f) => f,
-                None => panic!(""),
+                None => {
+                    let message = "Error trying to get the fields for the current C struct".to_string();
+                    handle_result_error(MError::ClassError(message));
+                    panic!()
+                },
             };
             fields.push('\t');
             match field.get_field_type() {
@@ -161,7 +175,11 @@ impl Class {
         for n in 0..self.fields.len() {
             let field = match self.fields.get(n) {
                 Some(f) => f,
-                None => panic!(""),
+                None => {
+                    let message = "Error trying to get the fields for the current C++ class".to_string();
+                    handle_result_error(MError::ClassError(message));
+                    panic!()
+                },
             };
             match field.get_field_type() {
                 FieldType::STRING => fields.push_str("string"),
@@ -206,7 +224,11 @@ impl Class {
         for n in 0..self.fields.len() {
             let field = match self.fields.get(n) {
                 Some(f) => f,
-                None => panic!(""),
+                None => {
+                    let message = "Error trying to get the fields for the current Rust struct".to_string();
+                    handle_result_error(MError::ClassError(message));
+                    panic!()
+                },
             };
             fields.push_str("\n\t");
             fields.push_str(field.get_name().as_str());
