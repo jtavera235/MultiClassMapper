@@ -19,7 +19,7 @@ use colored::Colorize;
 
 
 fn open_file(file: &str) -> File {
-    println!("{} {:?}", "About to open the file".green(), file);
+    println!("{} {:?}", "About to open the file".yellow(), file);
     let input_path = Path::new(file);
     match File::open(&input_path) {
         Ok(f) => f,
@@ -33,7 +33,7 @@ fn open_file(file: &str) -> File {
 }
 
 fn create_file(file: &str) -> File {
-    println!("{} {:?}", "Creating the file".green(), file);
+    println!("{} {:?}", "Creating the file".yellow(), file);
     let input_path = Path::new(file);
     match File::create(&input_path) {
         Ok(f) => f,
@@ -111,7 +111,8 @@ fn check_if_brackets_align(buf: &[String]) {
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 {
-        let message = "Incorrect number of arguments. Expected 2 arguments".to_string();
+        let message = "Incorrect number of arguments. Expected 2 arguments.\
+         \n Usage: {input file} {output file}".to_string();
         handle_result_error(MError::GenError(message));
     }
 
@@ -154,5 +155,5 @@ fn main() {
     let mut deparser = DeParser::new(parser.get_objects(), language);
     deparser.construct();
     write_file(&mut output_file, &deparser.get_output());
-    println!("{}", "Successfully mapped classes.".green());
+    println!("{}", "Successfully mapped objects.".green());
 }

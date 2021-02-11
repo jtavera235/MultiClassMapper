@@ -1,4 +1,4 @@
-use crate::models::{ArrayType, FieldType, ParseState};
+use crate::models::{ArrayType, FieldType, ParseState, Language};
 use crate::objects::{Class, Field};
 use crate::common::MError;
 use crate::common::handle_result_error;
@@ -10,6 +10,7 @@ pub struct Parser {
     pub index: usize,
     pub current_class: Option<Class>,
     pub current_field_name: Option<String>,
+    pub current_languages: Option<Vec<Language>>,
 }
 
 impl Parser {
@@ -17,10 +18,11 @@ impl Parser {
         let class: Vec<Class> = Vec::new();
         Parser {
             objects: class,
-            parse_state: ParseState::CLASS,
+            parse_state: ParseState::FILES,
             index: 0,
             current_class: None,
             current_field_name: None,
+            current_languages: None,
         }
     }
 
@@ -59,14 +61,62 @@ impl Parser {
     pub fn parse(&mut self, content: &[String]) {
         for _n in self.index..content.len() {
             match self.parse_state {
+                ParseState::FILES => self.create_files(content),
                 ParseState::CLASS => self.handle_class(content),
                 ParseState::FieldT => self.handle_field_t(content),
                 ParseState::FieldN => self.handle_field_n(content),
+                _ => {
+                    let message = String::from("Invalid parse state found.");
+                    handle_result_error(MError::ParseError(message))
+                }
             }
         }
     }
 
+    pub fn create_files(&mut self, tokens: &[String]) {
+        if self.check_if_reached_end(tokens.len()) {
+            return
+        }
+        let mut file_related_tokens: Vec<Language> = Vec::new();
+
+        if tokens.get(self.index).unwrap().as_str() != "[" {
+            let mut message = "Expected object to start with `[` but found ".to_string();
+            let first_token = tokens.get(self.index).unwrap().as_str();
+            message.push_str(first_token);
+            handle_result_error(MError::ParseError(message));
+        }
+
+        self.index += 1;
+        for i in self.index..tokens.len() {
+            let mut token = tokens.get(i).unwrap().clone();
+            token.retain(|c| c != ',');
+            match token.as_str() {
+                "rs" => file_related_tokens.push(Language::RUST),
+                "cpp" => file_related_tokens.push(Language::CPP),
+                "c" => file_related_tokens.push(Language::C),
+                "java" => file_related_tokens.push(Language::JAVA),
+                "ts" => file_related_tokens.push(Language::TYPESCRIPT),
+                "]" => {
+                    self.index += 1;
+                    break
+                },
+                _ => {
+                    let mut message = "Unknown language token found.\
+                     Expected either `rs`, `ts`, `cpp`, `c`, `java` but found ".to_string();
+                    message.push_str(token.as_str());
+                    handle_result_error(MError::ParseError(message));
+                }
+            }
+            self.index += 1;
+        }
+        self.current_languages = Some(file_related_tokens);
+        self.parse_state = ParseState::CLASS;
+    }
+
     pub fn handle_class(&mut self, tokens: &[String]) {
+        if self.check_if_reached_end(tokens.len()) {
+            return
+        }
         let token = match tokens.get(self.index) {
             Some(t) => t,
             None => {
@@ -78,7 +128,8 @@ impl Parser {
 
         let class = match self.get_current_class() {
             Some(c) => c,
-            None => Class::new(token.to_string()),
+            None => Class::new_with_languages(token.to_string(),
+                                              self.current_languages.as_ref().unwrap()),
         };
         self.set_current_class(&class);
         self.index += 1;
@@ -134,7 +185,7 @@ impl Parser {
         }
 
         if token == "}" {
-            self.parse_state = ParseState::CLASS;
+            self.parse_state = ParseState::FILES;
             self.add_class(&current_class);
             self.reset_current_class();
             self.reset_current_field();
@@ -202,5 +253,9 @@ impl Parser {
         }
         self.reset_current_field();
         self.index += 1;
+    }
+
+    fn check_if_reached_end(&self, size: usize) -> bool {
+        self.index == size
     }
 }

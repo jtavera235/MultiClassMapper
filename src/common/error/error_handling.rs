@@ -33,6 +33,6 @@ pub fn handle_result_error(err: MError) {
         },
     }
     println!("{}", "\n<------- End of message ------->".yellow());
-    println!("Classes were mapped unsuccessfully");
+    println!("Objects were mapped unsuccessfully");
     std::process::exit(1);
 }

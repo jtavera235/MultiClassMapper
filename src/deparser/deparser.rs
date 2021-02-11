@@ -26,6 +26,9 @@ impl DeParser {
     }
 
     pub fn construct(&mut self) {
+        for x in 0..self.objects.len() {
+            println!("{:?}", self.objects.get(x).unwrap().languages);
+        }
         match self.get_language() {
             Language::JAVA => self.construct_java_class(),
             Language::TYPESCRIPT => self.construct_ts_class(),

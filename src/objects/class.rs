@@ -1,4 +1,4 @@
-use crate::models::{ArrayType, FieldType};
+use crate::models::{ArrayType, FieldType, Language};
 use crate::objects::fields::Field;
 use crate::common::MError;
 use crate::common::handle_result_error;
@@ -7,6 +7,7 @@ use crate::common::handle_result_error;
 pub struct Class {
     pub name: String,
     pub fields: Vec<Field>,
+    pub languages: Vec<Language>,
 }
 
 impl Class {
@@ -14,12 +15,23 @@ impl Class {
         Class {
             name,
             fields: Vec::new(),
+            languages: Vec::new(),
+        }
+    }
+
+    pub fn new_with_languages(name: String, languages: &Vec<Language>) -> Class {
+        Class {
+            name,
+            fields: Vec::new(),
+            languages: languages.clone(),
         }
     }
 
     pub fn add_field(&mut self, field: &Field) {
         self.fields.push(field.clone());
     }
+
+    pub fn set_languages(&mut self, languages: &Vec<Language>) { self.languages = languages.clone()}
 
     pub fn get_name(&self) -> String {
          self.name.clone()
