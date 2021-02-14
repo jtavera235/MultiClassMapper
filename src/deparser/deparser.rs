@@ -1,137 +1,112 @@
 use crate::models::Language;
 use crate::objects::{Class, Field};
-use crate::common::{handle_result_error, MError};
+use crate::common::{handle_result_error, MError, write_file, create_file};
+use colored::Colorize;
+
 
 pub struct DeParser {
     pub objects: Vec<Class>,
-    pub language: Language,
-    pub output: String,
 }
 
 impl DeParser {
-    pub fn new(objects: Vec<Class>, language: Language) -> DeParser {
+    pub fn new(objects: Vec<Class>) -> DeParser {
         DeParser {
             objects,
-            language,
-            output: String::new(),
         }
-    }
-
-    pub fn get_language(&self) -> Language {
-        self.language.clone()
-    }
-
-    pub fn get_output(&self) -> String {
-        self.output.clone()
     }
 
     pub fn construct(&mut self) {
         for x in 0..self.objects.len() {
-            println!("{:?}", self.objects.get(x).unwrap().languages);
-        }
-        match self.get_language() {
-            Language::JAVA => self.construct_java_class(),
-            Language::TYPESCRIPT => self.construct_ts_class(),
-            Language::C => self.construct_c_structs(),
-            Language::CPP => self.construct_cpp_class(),
-            Language::RUST => self.construct_rust_structs(),
-        }
-    }
-
-    pub fn construct_java_class(&mut self) {
-        for n in 0..self.objects.len() {
-            let class = match self.objects.get(n) {
-                Some(c) => c,
+            let current_object = match self.objects.get(x) {
+                Some(x) => x,
                 None => {
-                    let message = "Error trying to construct the current Java class".to_string();
-                    handle_result_error(MError::ClassError(message));
-                    panic!()
-                },
-            };
-            self.output.push_str("class ");
-            self.output.push_str(class.get_name().as_str());
-            self.output.push_str(" { \n");
-            let class_fields = class.get_java_fields();
-            self.output.push_str(class_fields.as_str());
-            self.output.push_str("} \n \n");
-        }
-    }
-
-    pub fn construct_ts_class(&mut self) {
-        for n in 0..self.objects.len() {
-            let class = match self.objects.get(n) {
-                Some(c) => c,
-                None => {
-                    let message = "Error trying to construct the current Typescript class".to_string();
+                    let message = "Error trying to find the current objects language.".to_string();
                     handle_result_error(MError::DeparseError(message));
                     panic!()
                 },
             };
-            self.output.push_str("class ");
-            self.output.push_str(class.get_name().as_str());
-            self.output.push_str(" { \n");
-            let class_fields = class.get_ts_fields();
-            self.output.push_str(class_fields.as_str());
-            self.output.push_str("} \n \n");
+            for y in 0..current_object.languages.len() {
+                let language = match current_object.languages.get(y) {
+                    Some(T) => T,
+                    None => {
+                        let message = "Error trying to find the current objects language.".to_string();
+                        handle_result_error(MError::DeparseError(message));
+                        panic!()
+                    },
+                };
+                let (output, file_extension) = match language {
+                    Language::JAVA => (construct_java_class(current_object), ".java"),
+                    Language::TYPESCRIPT => (construct_ts_class(current_object), ".ts"),
+                    Language::C => (construct_c_structs(current_object), ".c"),
+                    Language::CPP => (construct_cpp_class(current_object), ".cpp"),
+                    Language::RUST => (construct_rust_structs(current_object), ".rs"),
+                };
+                let mut file_name = current_object.get_name();
+                file_name.push_str(file_extension);
+                let mut output_file = create_file(file_name.as_str());
+                print!("{}", "Beginning to write to file ".blue());
+                println!("{:?}", file_name);
+                write_file(&mut output_file, output.as_str());
+                print!("{}", "Finished writing to file ");
+                println!("{:?}", file_name);
+            }
         }
     }
+}
 
-    pub fn construct_c_structs(&mut self) {
-        for n in 0..self.objects.len() {
-            let class = match self.objects.get(n) {
-                Some(c) => c,
-                None => {
-                    let message = "Error trying to construct the current C struct".to_string();
-                    handle_result_error(MError::DeparseError(message));
-                    panic!()
-                },
-            };
-            self.output.push_str("typedef struct ");
-            self.output.push_str(class.get_name().as_str());
-            self.output.push_str(" { \n");
-            let class_fields = class.get_c_fields();
-            self.output.push_str(class_fields.as_str());
-            self.output.push_str("}; ");
-            self.output.push_str(class.get_name().as_str());
-            self.output.push_str("\n \n");
-        }
-    }
+fn construct_java_class(class: &Class) -> String {
+    let mut output = String::new();
+    output.push_str("class ");
+    output.push_str(class.get_name().as_str());
+    output.push_str(" { \n");
+    let class_fields = class.get_java_fields();
+    output.push_str(class_fields.as_str());
+    output.push_str("} \n \n");
+    output
+}
 
-    pub fn construct_cpp_class(&mut self) {
-        for n in 0..self.objects.len() {
-            let class = match self.objects.get(n) {
-                Some(c) => c,
-                None => {
-                    let message = "Error trying to construct the current C++ class".to_string();
-                    handle_result_error(MError::DeparseError(message));
-                    panic!()
-                },
-            };
-            self.output.push_str("class ");
-            self.output.push_str(class.get_name().as_str());
-            self.output.push_str(" { \n");
-            let class_fields = class.get_cpp_fields();
-            self.output.push_str(class_fields.as_str());
-            self.output.push_str("}; \n \n");
-        }
-    }
+fn construct_ts_class(class: &Class) -> String {
+    let mut output = String::new();
+    output.push_str("class ");
+    output.push_str(class.get_name().as_str());
+    output.push_str(" { \n");
+    let class_fields = class.get_ts_fields();
+    output.push_str(class_fields.as_str());
+    output.push_str("} \n \n");
+    output
+}
 
-    pub fn construct_rust_structs(&mut self) {
-        for n in 0..self.objects.len() {
-            let class = match self.objects.get(n) {
-                Some(c) => c,
-                None => {
-                    let message = "Error trying to construct the current Rust struct".to_string();
-                    handle_result_error(MError::DeparseError(message));
-                    panic!()
-                },
-            };
-            self.output.push_str("struct ");
-            self.output.push_str(class.get_name().as_str());
-            self.output.push_str(" { ");
-            let class_fields = class.get_rust_fields();
-            self.output.push_str(class_fields.as_str());
-            self.output.push_str("}\n \n ");
-        }
-    }
+fn construct_c_structs(class: &Class) -> String {
+    let mut output = String::new();
+    output.push_str("typedef struct ");
+    output.push_str(class.get_name().as_str());
+    output.push_str(" { \n");
+    let class_fields = class.get_c_fields();
+    output.push_str(class_fields.as_str());
+    output.push_str("}; ");
+    output.push_str(class.get_name().as_str());
+    output.push_str("\n \n");
+    output
+}
+
+fn construct_cpp_class(class: &Class) -> String {
+    let mut output = String::new();
+    output.push_str("class ");
+    output.push_str(class.get_name().as_str());
+    output.push_str(" { \n");
+    let class_fields = class.get_cpp_fields();
+    output.push_str(class_fields.as_str());
+    output.push_str("}; \n \n");
+    output
+}
+
+fn construct_rust_structs(class: &Class) -> String {
+    let mut output = String::new();
+    output.push_str("struct ");
+    output.push_str(class.get_name().as_str());
+    output.push_str(" { ");
+    let class_fields = class.get_rust_fields();
+    output.push_str(class_fields.as_str());
+    output.push_str("}\n \n ");
+    output
 }

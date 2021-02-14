@@ -5,5 +5,10 @@ n_out.java
 n_out.rs
 n_out.ts
 input.txt
+**.c
+**.cpp
+**.cc
+**.ts
+**.java
 .idea
 

@@ -15,41 +15,11 @@ use std::path::Path;
 
 use common::handle_result_error;
 use common::MError;
+use common::write_file;
+use common::create_file;
+use common::open_file;
 use colored::Colorize;
 
-
-fn open_file(file: &str) -> File {
-    println!("{} {:?}", "About to open the file".yellow(), file);
-    let input_path = Path::new(file);
-    match File::open(&input_path) {
-        Ok(f) => f,
-        Err(e) => {
-            let mut message = "Error opening file: ".to_string();
-            message.push_str(file);
-            handle_result_error(MError::GenError(message));
-            Err(e).unwrap()
-        },
-    }
-}
-
-fn create_file(file: &str) -> File {
-    println!("{} {:?}", "Creating the file".yellow(), file);
-    let input_path = Path::new(file);
-    match File::create(&input_path) {
-        Ok(f) => f,
-        Err(e) => {
-            let mut message = "Error creating file: ".to_string();
-            message.push_str(file);
-            handle_result_error(MError::GenError(message));
-            Err(e).unwrap()
-        },
-    }
-}
-
-fn write_file(file: &mut File, buffer: &str) {
-    file.write_all(buffer.as_bytes())
-        .expect("unable to write to file");
-}
 
 fn get_file_buffer(file: &mut File, filename: &str) -> Vec<String> {
     let mut buffer = String::new();
@@ -110,9 +80,9 @@ fn check_if_brackets_align(buf: &[String]) {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
-        let message = "Incorrect number of arguments. Expected 2 arguments.\
-         \n Usage: {input file} {output file}".to_string();
+    if args.len() != 2 {
+        let message = "Incorrect number of arguments. Expected 1 argument.\
+         \n Usage: {input file}".to_string();
         handle_result_error(MError::GenError(message));
     }
 
@@ -124,36 +94,14 @@ fn main() {
             panic!()
         },
     };
-    let output_string = match args.get(2) {
-        Some(s) => s,
-        None => {
-            let message = "Error occurred obtaining output file name.".to_string();
-            handle_result_error(MError::GenError(message));
-            panic!()
-        },
-    };
     let mut input_file = open_file(input_string);
-    let mut output_file = create_file(output_string);
     let mut parser = Parser::new();
     let file_content = get_file_buffer(&mut input_file,
-                                       output_string.as_str());
+                                       input_string.as_str());
     check_if_brackets_align(&file_content);
 
     parser.parse(&file_content);
-    let mut language = Language::JAVA;
-    if output_string.clone().contains(".java") {
-        language = Language::JAVA;
-    } else if output_string.clone().contains(".ts") {
-        language = Language::TYPESCRIPT;
-    } else if output_string.clone().contains(".cpp") {
-        language = Language::CPP;
-    } else if output_string.clone().contains(".c") {
-        language = Language::C;
-    } else if output_string.clone().contains(".rs") {
-        language = Language::RUST;
-    }
-    let mut deparser = DeParser::new(parser.get_objects(), language);
+    let mut deparser = DeParser::new(parser.get_objects());
     deparser.construct();
-    write_file(&mut output_file, &deparser.get_output());
     println!("{}", "Successfully mapped objects.".green());
 }
