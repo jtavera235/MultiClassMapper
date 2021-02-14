@@ -1,10 +1,7 @@
-use std::thread;
+use crate::common::{create_file, handle_result_error, write_file, MError};
 use crate::models::Language;
-use crate::objects::{Class, Field};
-use crate::common::{handle_result_error, MError, write_file, create_file};
+use crate::objects::Class;
 use colored::Colorize;
-use std::sync::{Mutex, Arc};
-
 
 pub struct DeParser {
     pub objects: Vec<Class>,
@@ -12,9 +9,7 @@ pub struct DeParser {
 
 impl DeParser {
     pub fn new(objects: Vec<Class>) -> DeParser {
-        DeParser {
-            objects,
-        }
+        DeParser { objects }
     }
 
     pub fn construct(&mut self) {
@@ -25,16 +20,17 @@ impl DeParser {
                     let message = "Error trying to find the current objects language.".to_string();
                     handle_result_error(MError::DeparseError(message));
                     panic!()
-                },
+                }
             };
             for y in 0..current_object.languages.len() {
                 let language = match current_object.languages.get(y) {
-                    Some(T) => T,
+                    Some(l) => l,
                     None => {
-                        let message = "Error trying to find the current objects language.".to_string();
+                        let message =
+                            "Error trying to find the current objects language.".to_string();
                         handle_result_error(MError::DeparseError(message));
                         panic!()
-                    },
+                    }
                 };
                 let (output, file_extension) = match language {
                     Language::JAVA => (construct_java_class(current_object), ".java"),
@@ -49,14 +45,11 @@ impl DeParser {
                 print!("{}", "Beginning to write to file ".blue());
                 println!("{:?}", file_name);
                 write_file(&mut output_file, output.as_str());
-                print!("{}", "Finished writing to file ");
-                println!("{:?}", file_name);
+                println!("Finished writing to file {:?}", file_name);
             }
         }
     }
 }
-
-
 
 fn construct_java_class(class: &Class) -> String {
     let mut output = String::new();
@@ -114,4 +107,3 @@ fn construct_rust_structs(class: &Class) -> String {
     output.push_str("}\n \n ");
     output
 }
-

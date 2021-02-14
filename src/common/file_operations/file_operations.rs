@@ -1,8 +1,8 @@
+use crate::common::{handle_result_error, MError};
+use colored::Colorize;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use colored::Colorize;
-use crate::common::{handle_result_error, MError};
 
 pub fn write_file(file: &mut File, buffer: &str) {
     file.write_all(buffer.as_bytes())
@@ -19,7 +19,7 @@ pub fn open_file(file: &str) -> File {
             message.push_str(file);
             handle_result_error(MError::GenError(message));
             Err(e).unwrap()
-        },
+        }
     }
 }
 
@@ -33,7 +33,7 @@ pub fn create_file(file: &str) -> File {
             message.push_str(file);
             handle_result_error(MError::GenError(message));
             Err(e).unwrap()
-        },
+        }
     }
 }
 
@@ -45,7 +45,7 @@ pub fn get_file_buffer(file: &mut File, filename: &str) -> Vec<String> {
             let mut message = "Error reading file: ".to_string();
             message.push_str(filename);
             handle_result_error(MError::GenError(message))
-        },
+        }
     }
     let mut buffer_vector: Vec<&str> = buffer
         .split(|c| c == '\n' || c == ' ' || c == '\t')

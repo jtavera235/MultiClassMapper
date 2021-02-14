@@ -1,30 +1,23 @@
+mod common;
 mod deparser;
 mod models;
 mod objects;
 mod parser;
 mod user_env;
-mod common;
 
 use crate::deparser::DeParser;
-use crate::models::Language;
 use crate::parser::Parser;
 use std::env;
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::Path;
-use std::time::{Duration, Instant};
 use std::thread;
+use std::time::Instant;
 
-use common::handle_result_error;
-use common::MError;
-use common::write_file;
-use common::create_file;
-use common::open_file;
-use common::get_file_buffer;
-use parser::check_if_brackets_align;
 use colored::Colorize;
-use std::sync::{Mutex, Arc};
-
+use common::get_file_buffer;
+use common::handle_result_error;
+use common::open_file;
+use common::MError;
+use parser::check_if_brackets_align;
+use std::sync::{Arc, Mutex};
 
 fn main() {
     let start_time = Instant::now();
@@ -40,10 +33,12 @@ fn main() {
             let args = match args.lock() {
                 Ok(e) => e,
                 Err(_er) => {
-                    let message = "An error occurred obtaining command line arguments in the thread.".to_string();
+                    let message =
+                        "An error occurred obtaining command line arguments in the thread."
+                            .to_string();
                     handle_result_error(MError::GenError(message));
                     panic!()
-                },
+                }
             };
             println!("{}{:?}", "Starting thread ".cyan(), n);
             let input_string = match args.get(n as usize) {
@@ -52,12 +47,11 @@ fn main() {
                     let message = "Error occurred obtaining input file name.".to_string();
                     handle_result_error(MError::GenError(message));
                     panic!()
-                },
+                }
             };
             let mut input_file = open_file(input_string);
             let mut parser = Parser::new();
-            let file_content = get_file_buffer(&mut input_file,
-                                               input_string.as_str());
+            let file_content = get_file_buffer(&mut input_file, input_string.as_str());
             check_if_brackets_align(&file_content);
 
             parser.parse(&file_content);
@@ -71,5 +65,9 @@ fn main() {
     }
 
     let end = start_time.elapsed();
-    println!("{} in {:?} (milliseconds)", "Successfully mapped objects".green(), end);
+    println!(
+        "{} in {:?} (milliseconds)",
+        "Successfully mapped objects".green(),
+        end
+    );
 }

@@ -1,5 +1,5 @@
 [package]
-name = "ClassMapper"
+name = "class_mapper"
 version = "0.1.0"
 authors = ["Juan Tavera <jtavera235@gmail.com>"]
 edition = "2018"

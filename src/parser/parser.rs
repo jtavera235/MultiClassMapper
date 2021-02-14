@@ -1,7 +1,7 @@
-use crate::models::{ArrayType, FieldType, ParseState, Language};
-use crate::objects::{Class, Field};
-use crate::common::MError;
 use crate::common::handle_result_error;
+use crate::common::MError;
+use crate::models::{ArrayType, FieldType, Language, ParseState};
+use crate::objects::{Class, Field};
 
 #[derive(Clone, Debug)]
 pub struct Parser {
@@ -10,7 +10,7 @@ pub struct Parser {
     pub index: usize,
     pub current_class: Option<Class>,
     pub current_field_name: Option<String>,
-    pub current_languages: Option<Vec<Language>>
+    pub current_languages: Option<Vec<Language>>,
 }
 
 impl Parser {
@@ -65,17 +65,13 @@ impl Parser {
                 ParseState::CLASS => self.handle_class(content),
                 ParseState::FieldT => self.handle_field_t(content),
                 ParseState::FieldN => self.handle_field_n(content),
-                _ => {
-                    let message = String::from("Invalid parse state found.");
-                    handle_result_error(MError::ParseError(message))
-                }
             }
         }
     }
 
     fn add_language(&mut self, tokens: &[String]) {
         if self.check_if_reached_end(tokens.len()) {
-            return
+            return;
         }
         let mut file_related_tokens: Vec<Language> = Vec::new();
 
@@ -98,11 +94,12 @@ impl Parser {
                 "ts" => file_related_tokens.push(Language::TYPESCRIPT),
                 "]" => {
                     self.index += 1;
-                    break
-                },
+                    break;
+                }
                 _ => {
                     let mut message = "Unknown language token found. \
-                     Expected either `rs`, `ts`, `cpp`, `c`, or `java` but found ".to_string();
+                     Expected either `rs`, `ts`, `cpp`, `c`, or `java` but found "
+                        .to_string();
                     message.push_str(token.as_str());
                     handle_result_error(MError::ParseError(message));
                 }
@@ -117,7 +114,7 @@ impl Parser {
 
     fn handle_class(&mut self, tokens: &[String]) {
         if self.check_if_reached_end(tokens.len()) {
-            return
+            return;
         }
         let token = match tokens.get(self.index) {
             Some(t) => t,
@@ -125,13 +122,12 @@ impl Parser {
                 let message = "Token not found for the current class index.".to_string();
                 handle_result_error(MError::ParseError(message));
                 panic!()
-            },
+            }
         };
 
         let class = match self.get_current_class() {
             Some(c) => c,
-            None => Class::new_with_languages(token.to_string(),
-                                              self.current_languages.as_ref().unwrap()),
+            None => Class::new(token.to_string(), self.current_languages.as_ref().unwrap()),
         };
         self.set_current_class(&class);
         self.index += 1;
@@ -145,7 +141,7 @@ impl Parser {
                 let message = "Token not found for the current value index.".to_string();
                 handle_result_error(MError::ParseError(message));
                 panic!()
-            },
+            }
         };
         if token != "{" && token.contains(':') {
             let mut token_cpy = token.clone();
@@ -155,7 +151,7 @@ impl Parser {
         } else if token != "{" {
             let mut message = "Unknown token found. Expected field but found '".to_string();
             message.push_str(token);
-            message.push_str("'");
+            message.push('\'');
             handle_result_error(MError::ParseError(message));
         }
         self.index += 1;
@@ -168,9 +164,9 @@ impl Parser {
                 let message = "Token not found for the current field type index.".to_string();
                 handle_result_error(MError::ParseError(message));
                 panic!()
-            },
+            }
         };
-       /* if token.as_str() == "\n" {
+        /* if token.as_str() == "\n" {
             self.ignore_newline_();
             self.handle_field_n(tokens);
         }
@@ -182,7 +178,7 @@ impl Parser {
                 let message = "Expected to find a class but none were found. Verify that braces are set correctly.".to_string();
                 handle_result_error(MError::ParseError(message));
                 panic!()
-            },
+            }
         };
         let is_last_field = token.contains(',');
 
@@ -250,7 +246,7 @@ impl Parser {
                     let message = "Error getting the value of the current field".to_string();
                     handle_result_error(MError::ParseError(message));
                     panic!()
-                },
+                }
             }
             let field = Field::new(self.get_current_field().unwrap(), field_type);
             current_class.add_field(&field);
@@ -268,38 +264,41 @@ impl Parser {
     }
 }
 
-pub
-fn check_if_brackets_align(buf: &[String]) {
+pub fn check_if_brackets_align(buf: &[String]) {
     let mut stack = Vec::new();
 
     for n in 0..buf.len() {
         let val = match buf.get(n) {
             Some(s) => s,
             None => {
-                let message = "Error occurred while parsing file for bracket verification".
-                    to_string();
+                let message =
+                    "Error occurred while parsing file for bracket verification".to_string();
                 handle_result_error(MError::GenError(message));
                 panic!()
-            },
+            }
         };
         if val.as_str() == "}" {
             if stack.is_empty() {
                 let message = "Error occurred while checking for bracket verification.
-                File contains an extra `}`".to_string();
+                File contains an extra `}`"
+                    .to_string();
                 handle_result_error(MError::ParseError(message));
             } else {
                 let top_v = match stack.pop() {
                     Some(v) => v,
                     None => {
                         let message = "Error occurred while parsing file for bracket verification.
-                        File contains an extra `{`".to_string();
+                        File contains an extra `{`"
+                            .to_string();
                         handle_result_error(MError::ParseError(message));
                         ""
-                    },
+                    }
                 };
                 if top_v != "{" {
-                    let message = "Unknown error occurred while parsing file for bracket verification.
-                        Bracket stack is not aligned".to_string();
+                    let message =
+                        "Unknown error occurred while parsing file for bracket verification.
+                        Bracket stack is not aligned"
+                            .to_string();
                     handle_result_error(MError::ParseError(message));
                 }
             }

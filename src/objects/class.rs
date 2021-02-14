@@ -1,7 +1,7 @@
+use crate::common::handle_result_error;
+use crate::common::MError;
 use crate::models::{ArrayType, FieldType, Language};
 use crate::objects::fields::Field;
-use crate::common::MError;
-use crate::common::handle_result_error;
 
 #[derive(Clone, Debug)]
 pub struct Class {
@@ -11,19 +11,11 @@ pub struct Class {
 }
 
 impl Class {
-    pub fn new(name: String) -> Class {
+    pub fn new(name: String, languages: &[Language]) -> Class {
         Class {
             name,
             fields: Vec::new(),
-            languages: Vec::new(),
-        }
-    }
-
-    pub fn new_with_languages(name: String, languages: &Vec<Language>) -> Class {
-        Class {
-            name,
-            fields: Vec::new(),
-            languages: languages.clone(),
+            languages: languages.to_owned(),
         }
     }
 
@@ -31,10 +23,8 @@ impl Class {
         self.fields.push(field.clone());
     }
 
-    pub fn set_languages(&mut self, languages: &Vec<Language>) { self.languages = languages.clone()}
-
     pub fn get_name(&self) -> String {
-         self.name.clone()
+        self.name.clone()
     }
 
     pub fn get_java_fields(&self) -> String {
@@ -43,10 +33,11 @@ impl Class {
             let field = match self.fields.get(n) {
                 Some(f) => f,
                 None => {
-                    let message = "Error trying to get the fields for the current Java class".to_string();
+                    let message =
+                        "Error trying to get the fields for the current Java class".to_string();
                     handle_result_error(MError::ClassError(message));
                     panic!()
-                },
+                }
             };
             fields.push('\t');
             match field.get_field_type() {
@@ -90,10 +81,11 @@ impl Class {
             let field = match self.fields.get(n) {
                 Some(f) => f,
                 None => {
-                    let message = "Error trying to get the fields for the current Typescript class".to_string();
+                    let message = "Error trying to get the fields for the current Typescript class"
+                        .to_string();
                     handle_result_error(MError::ClassError(message));
                     panic!()
-                },
+                }
             };
             fields.push('\t');
             fields.push_str(field.get_name().as_str());
@@ -138,10 +130,11 @@ impl Class {
             let field = match self.fields.get(n) {
                 Some(f) => f,
                 None => {
-                    let message = "Error trying to get the fields for the current C struct".to_string();
+                    let message =
+                        "Error trying to get the fields for the current C struct".to_string();
                     handle_result_error(MError::ClassError(message));
                     panic!()
-                },
+                }
             };
             fields.push('\t');
             match field.get_field_type() {
@@ -188,10 +181,11 @@ impl Class {
             let field = match self.fields.get(n) {
                 Some(f) => f,
                 None => {
-                    let message = "Error trying to get the fields for the current C++ class".to_string();
+                    let message =
+                        "Error trying to get the fields for the current C++ class".to_string();
                     handle_result_error(MError::ClassError(message));
                     panic!()
-                },
+                }
             };
             match field.get_field_type() {
                 FieldType::STRING => fields.push_str("string"),
@@ -237,10 +231,11 @@ impl Class {
             let field = match self.fields.get(n) {
                 Some(f) => f,
                 None => {
-                    let message = "Error trying to get the fields for the current Rust struct".to_string();
+                    let message =
+                        "Error trying to get the fields for the current Rust struct".to_string();
                     handle_result_error(MError::ClassError(message));
                     panic!()
-                },
+                }
             };
             fields.push_str("\n\t");
             fields.push_str(field.get_name().as_str());
