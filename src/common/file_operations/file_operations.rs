@@ -36,3 +36,21 @@ pub fn create_file(file: &str) -> File {
         },
     }
 }
+
+pub fn get_file_buffer(file: &mut File, filename: &str) -> Vec<String> {
+    let mut buffer = String::new();
+    match file.read_to_string(&mut buffer) {
+        Ok(_s) => (),
+        Err(_e) => {
+            let mut message = "Error reading file: ".to_string();
+            message.push_str(filename);
+            handle_result_error(MError::GenError(message))
+        },
+    }
+    let mut buffer_vector: Vec<&str> = buffer
+        .split(|c| c == '\n' || c == ' ' || c == '\t')
+        .collect();
+    buffer_vector.retain(|&c| !c.is_empty());
+    let strings = buffer_vector.iter().map(|s| s.to_string()).collect();
+    strings
+}

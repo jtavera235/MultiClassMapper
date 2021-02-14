@@ -1,7 +1,9 @@
+use std::thread;
 use crate::models::Language;
 use crate::objects::{Class, Field};
 use crate::common::{handle_result_error, MError, write_file, create_file};
 use colored::Colorize;
+use std::sync::{Mutex, Arc};
 
 
 pub struct DeParser {
@@ -53,6 +55,8 @@ impl DeParser {
         }
     }
 }
+
+
 
 fn construct_java_class(class: &Class) -> String {
     let mut output = String::new();
@@ -110,3 +114,4 @@ fn construct_rust_structs(class: &Class) -> String {
     output.push_str("}\n \n ");
     output
 }
+

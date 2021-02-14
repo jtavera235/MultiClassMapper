@@ -10,7 +10,7 @@ pub struct Parser {
     pub index: usize,
     pub current_class: Option<Class>,
     pub current_field_name: Option<String>,
-    pub current_languages: Option<Vec<Language>>,
+    pub current_languages: Option<Vec<Language>>
 }
 
 impl Parser {
@@ -26,15 +26,15 @@ impl Parser {
         }
     }
 
-    pub fn add_class(&mut self, class: &Class) {
+    fn add_class(&mut self, class: &Class) {
         self.objects.push(class.clone());
     }
 
-    pub fn get_current_class(&self) -> Option<Class> {
+    fn get_current_class(&self) -> Option<Class> {
         self.current_class.clone()
     }
 
-    pub fn get_current_field(&self) -> Option<String> {
+    fn get_current_field(&self) -> Option<String> {
         self.current_field_name.clone()
     }
 
@@ -42,15 +42,15 @@ impl Parser {
         self.objects.clone()
     }
 
-    pub fn set_current_class(&mut self, class: &Class) {
+    fn set_current_class(&mut self, class: &Class) {
         self.current_class = Some(class.clone());
     }
 
-    pub fn set_current_field(&mut self, field: &str) {
+    fn set_current_field(&mut self, field: &str) {
         self.current_field_name = Some(field.to_string());
     }
 
-    pub fn reset_current_class(&mut self) {
+    fn reset_current_class(&mut self) {
         self.current_class = None;
     }
 
@@ -61,7 +61,7 @@ impl Parser {
     pub fn parse(&mut self, content: &[String]) {
         for _n in self.index..content.len() {
             match self.parse_state {
-                ParseState::FILES => self.create_files(content),
+                ParseState::FILES => self.add_language(content),
                 ParseState::CLASS => self.handle_class(content),
                 ParseState::FieldT => self.handle_field_t(content),
                 ParseState::FieldN => self.handle_field_n(content),
@@ -73,7 +73,7 @@ impl Parser {
         }
     }
 
-    pub fn create_files(&mut self, tokens: &[String]) {
+    fn add_language(&mut self, tokens: &[String]) {
         if self.check_if_reached_end(tokens.len()) {
             return
         }
@@ -101,19 +101,21 @@ impl Parser {
                     break
                 },
                 _ => {
-                    let mut message = "Unknown language token found.\
-                     Expected either `rs`, `ts`, `cpp`, `c`, `java` but found ".to_string();
+                    let mut message = "Unknown language token found. \
+                     Expected either `rs`, `ts`, `cpp`, `c`, or `java` but found ".to_string();
                     message.push_str(token.as_str());
                     handle_result_error(MError::ParseError(message));
                 }
             }
             self.index += 1;
         }
+        file_related_tokens.sort_unstable();
+        file_related_tokens.dedup();
         self.current_languages = Some(file_related_tokens);
         self.parse_state = ParseState::CLASS;
     }
 
-    pub fn handle_class(&mut self, tokens: &[String]) {
+    fn handle_class(&mut self, tokens: &[String]) {
         if self.check_if_reached_end(tokens.len()) {
             return
         }
@@ -136,7 +138,7 @@ impl Parser {
         self.parse_state = ParseState::FieldT;
     }
 
-    pub fn handle_field_t(&mut self, tokens: &[String]) {
+    fn handle_field_t(&mut self, tokens: &[String]) {
         let token = match tokens.get(self.index) {
             Some(t) => t,
             None => {
@@ -159,7 +161,7 @@ impl Parser {
         self.index += 1;
     }
 
-    pub fn handle_field_n(&mut self, tokens: &[String]) {
+    fn handle_field_n(&mut self, tokens: &[String]) {
         let token = match tokens.get(self.index) {
             Some(t) => t,
             None => {
@@ -168,6 +170,12 @@ impl Parser {
                 panic!()
             },
         };
+       /* if token.as_str() == "\n" {
+            self.ignore_newline_();
+            self.handle_field_n(tokens);
+        }
+
+        */
         let mut current_class = match self.get_current_class() {
             Some(c) => c,
             None => {
@@ -257,5 +265,46 @@ impl Parser {
 
     fn check_if_reached_end(&self, size: usize) -> bool {
         self.index == size
+    }
+}
+
+pub
+fn check_if_brackets_align(buf: &[String]) {
+    let mut stack = Vec::new();
+
+    for n in 0..buf.len() {
+        let val = match buf.get(n) {
+            Some(s) => s,
+            None => {
+                let message = "Error occurred while parsing file for bracket verification".
+                    to_string();
+                handle_result_error(MError::GenError(message));
+                panic!()
+            },
+        };
+        if val.as_str() == "}" {
+            if stack.is_empty() {
+                let message = "Error occurred while checking for bracket verification.
+                File contains an extra `}`".to_string();
+                handle_result_error(MError::ParseError(message));
+            } else {
+                let top_v = match stack.pop() {
+                    Some(v) => v,
+                    None => {
+                        let message = "Error occurred while parsing file for bracket verification.
+                        File contains an extra `{`".to_string();
+                        handle_result_error(MError::ParseError(message));
+                        ""
+                    },
+                };
+                if top_v != "{" {
+                    let message = "Unknown error occurred while parsing file for bracket verification.
+                        Bracket stack is not aligned".to_string();
+                    handle_result_error(MError::ParseError(message));
+                }
+            }
+        } else if val.as_str() == "{" {
+            stack.push(val);
+        }
     }
 }
