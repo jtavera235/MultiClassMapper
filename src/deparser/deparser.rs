@@ -1,5 +1,5 @@
 use crate::common::{create_file, handle_result_error, write_file, MError};
-use crate::models::Language;
+use crate::models::{Language, Access};
 use crate::objects::Class;
 use colored::Colorize;
 
@@ -53,6 +53,13 @@ impl DeParser {
 
 fn construct_java_class(class: &Class) -> String {
     let mut output = String::new();
+
+    match class.get_access() {
+        Access::PRIVATE => output.push_str("private "),
+        Access::PUBLIC => output.push_str("public "),
+        Access::UNDEFINED => (),
+    }
+
     output.push_str("class ");
     output.push_str(class.get_name().as_str());
     output.push_str(" { \n");
@@ -64,6 +71,11 @@ fn construct_java_class(class: &Class) -> String {
 
 fn construct_ts_class(class: &Class) -> String {
     let mut output = String::new();
+    match class.get_access() {
+        Access::PRIVATE => output.push_str("private "),
+        Access::PUBLIC => output.push_str("public "),
+        Access::UNDEFINED => (),
+    }
     output.push_str("class ");
     output.push_str(class.get_name().as_str());
     output.push_str(" { \n");
@@ -99,6 +111,10 @@ fn construct_cpp_class(class: &Class) -> String {
 
 fn construct_rust_structs(class: &Class) -> String {
     let mut output = String::new();
+    match class.get_access() {
+        Access::PUBLIC => output.push_str("pub "),
+        _ => (),
+    }
     output.push_str("struct ");
     output.push_str(class.get_name().as_str());
     output.push_str(" { ");

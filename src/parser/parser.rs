@@ -1,6 +1,6 @@
 use crate::common::handle_result_error;
 use crate::common::MError;
-use crate::models::{ArrayType, FieldType, Language, ParseState};
+use crate::models::{ArrayType, FieldType, Language, ParseState, Access};
 use crate::objects::{Class, Field};
 
 #[derive(Clone, Debug)]
@@ -11,6 +11,7 @@ pub struct Parser {
     pub current_class: Option<Class>,
     pub current_field_name: Option<String>,
     pub current_languages: Option<Vec<Language>>,
+    pub current_field_access: Access,
 }
 
 impl Parser {
@@ -23,6 +24,7 @@ impl Parser {
             current_class: None,
             current_field_name: None,
             current_languages: None,
+            current_field_access: Access::UNDEFINED,
         }
     }
 
@@ -36,6 +38,10 @@ impl Parser {
 
     fn get_current_field(&self) -> Option<String> {
         self.current_field_name.clone()
+    }
+
+    fn get_current_filed_access(&self) -> Access {
+        self.current_field_access.clone()
     }
 
     pub fn get_objects(&self) -> Vec<Class> {
@@ -116,7 +122,7 @@ impl Parser {
         if self.check_if_reached_end(tokens.len()) {
             return;
         }
-        let token = match tokens.get(self.index) {
+        let mut token = match tokens.get(self.index) {
             Some(t) => t,
             None => {
                 let message = "Token not found for the current class index.".to_string();
@@ -125,9 +131,36 @@ impl Parser {
             }
         };
 
+        let mut access_given = false;
+        let class_access = match token.as_str() {
+            "pub" =>  {
+                self.index += 1;
+                access_given = true;
+                Access::PUBLIC
+            },
+            "priv" => {
+                self.index += 1;
+                access_given = true;
+                Access::PRIVATE
+            },
+            _ => Access::UNDEFINED,
+        };
+
+        if access_given {
+            token = match tokens.get(self.index) {
+                Some(t) => t,
+                None => {
+                    let message = "Token not found for the current class index.".to_string();
+                    handle_result_error(MError::ParseError(message));
+                    panic!()
+                }
+            };
+        }
+
         let class = match self.get_current_class() {
             Some(c) => c,
-            None => Class::new(token.to_string(), self.current_languages.as_ref().unwrap()),
+            None => Class::new(token.to_string(), self.current_languages.as_ref().unwrap(),
+            class_access),
         };
         self.set_current_class(&class);
         self.index += 1;
@@ -135,7 +168,7 @@ impl Parser {
     }
 
     fn handle_field_t(&mut self, tokens: &[String]) {
-        let token = match tokens.get(self.index) {
+        let mut token = match tokens.get(self.index) {
             Some(t) => t,
             None => {
                 let message = "Token not found for the current value index.".to_string();
@@ -143,13 +176,34 @@ impl Parser {
                 panic!()
             }
         };
+        match token.as_str() {
+            "priv" => {
+                self.current_field_access = Access::PRIVATE;
+                self.index += 1;
+            },
+            "pub" => {
+                self.current_field_access = Access::PUBLIC;
+                self.index += 1;
+            },
+            _ => self.current_field_access = Access::UNDEFINED,
+        }
+
+        token = match tokens.get(self.index) {
+            Some(t) => t,
+            None => {
+                let message = "Token not found for the current value index.".to_string();
+                handle_result_error(MError::ParseError(message));
+                panic!()
+            }
+        };
+
         if token != "{" && token.contains(':') {
             let mut token_cpy = token.clone();
             token_cpy.truncate(token_cpy.len() - 1);
             self.set_current_field(&token_cpy);
             self.parse_state = ParseState::FieldN;
         } else if token != "{" {
-            let mut message = "Unknown token found. Expected field but found '".to_string();
+            let mut message = "Unknown token found. Expected field or field access token but found '".to_string();
             message.push_str(token);
             message.push('\'');
             handle_result_error(MError::ParseError(message));
@@ -166,12 +220,6 @@ impl Parser {
                 panic!()
             }
         };
-        /* if token.as_str() == "\n" {
-            self.ignore_newline_();
-            self.handle_field_n(tokens);
-        }
-
-        */
         let mut current_class = match self.get_current_class() {
             Some(c) => c,
             None => {
@@ -248,7 +296,8 @@ impl Parser {
                     panic!()
                 }
             }
-            let field = Field::new(self.get_current_field().unwrap(), field_type);
+            let field = Field::new(self.get_current_field().unwrap(), field_type,
+                                   self.get_current_filed_access());
             current_class.add_field(&field);
             self.set_current_class(&current_class);
             if is_last_field {

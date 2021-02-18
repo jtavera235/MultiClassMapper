@@ -19,6 +19,12 @@ use common::MError;
 use parser::check_if_brackets_align;
 use std::sync::{Arc, Mutex};
 
+fn ensure_input_is_text_file(file: &String) -> bool {
+    let file_length = file.len();
+    let file_extension_start_index = file_length - 4;
+    file[file_extension_start_index..] == *".txt"
+}
+
 fn main() {
     let start_time = Instant::now();
     let args: Vec<String> = env::args().collect();
@@ -49,9 +55,15 @@ fn main() {
                     panic!()
                 }
             };
+            if !ensure_input_is_text_file(input_string) {
+                let message = "Input file must have a .txt extension to be analyzed.".to_string();
+                handle_result_error(MError::GenError(message));
+                panic!()
+            }
             let mut input_file = open_file(input_string);
             let mut parser = Parser::new();
-            let file_content = get_file_buffer(&mut input_file, input_string.as_str());
+            let file_content = get_file_buffer(&mut input_file,
+                                               input_string.as_str());
             check_if_brackets_align(&file_content);
 
             parser.parse(&file_content);

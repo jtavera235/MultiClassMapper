@@ -1,21 +1,24 @@
 use crate::common::handle_result_error;
 use crate::common::MError;
-use crate::models::{ArrayType, FieldType, Language};
+use crate::models::{ArrayType, FieldType, Language, Access};
 use crate::objects::fields::Field;
+use regex::Regex;
 
 #[derive(Clone, Debug)]
 pub struct Class {
     pub name: String,
     pub fields: Vec<Field>,
     pub languages: Vec<Language>,
+    pub access: Access,
 }
 
 impl Class {
-    pub fn new(name: String, languages: &[Language]) -> Class {
+    pub fn new(name: String, languages: &[Language], access: Access) -> Class {
         Class {
             name,
             fields: Vec::new(),
             languages: languages.to_owned(),
+            access,
         }
     }
 
@@ -26,6 +29,8 @@ impl Class {
     pub fn get_name(&self) -> String {
         self.name.clone()
     }
+
+    pub fn get_access(&self) -> Access { self.access.clone() }
 
     pub fn get_java_fields(&self) -> String {
         let mut fields = String::new();
@@ -40,6 +45,11 @@ impl Class {
                 }
             };
             fields.push('\t');
+            match field.get_access() {
+                Access::PUBLIC => fields.push_str("public "),
+                Access::PRIVATE => fields.push_str("private "),
+                _ => (),
+            }
             match field.get_field_type() {
                 FieldType::STRING => fields.push_str("String"),
                 FieldType::INTEGER => fields.push_str("int"),
@@ -88,6 +98,11 @@ impl Class {
                 }
             };
             fields.push('\t');
+            match field.get_access() {
+                Access::PUBLIC => fields.push_str("public "),
+                Access::PRIVATE => fields.push_str("private "),
+                _ => (),
+            }
             fields.push_str(field.get_name().as_str());
             fields.push(':');
             fields.push(' ');
@@ -238,6 +253,10 @@ impl Class {
                 }
             };
             fields.push_str("\n\t");
+            match field.get_access() {
+                Access::PUBLIC => fields.push_str("pub "),
+                _ => (),
+            }
             fields.push_str(field.get_name().as_str());
             fields.push_str(": ");
             match field.get_field_type() {
@@ -276,4 +295,7 @@ impl Class {
         fields.push('\n');
         fields
     }
+}
+
+fn camel_case_to_underscore(field: &mut String) {
 }
