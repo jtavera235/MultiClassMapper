@@ -1,6 +1,6 @@
 use crate::common::handle_result_error;
 use crate::common::MError;
-use crate::models::{ArrayType, FieldType, Language, ParseState, Access};
+use crate::models::{Access, ArrayType, FieldType, Language, ParseState};
 use crate::objects::{Class, Field};
 
 #[derive(Clone, Debug)]
@@ -94,7 +94,6 @@ impl Parser {
             token.retain(|c| c != ',');
             match token.as_str() {
                 "rs" => file_related_tokens.push(Language::RUST),
-                "cpp" => file_related_tokens.push(Language::CPP),
                 "c" => file_related_tokens.push(Language::C),
                 "java" => file_related_tokens.push(Language::JAVA),
                 "ts" => file_related_tokens.push(Language::TYPESCRIPT),
@@ -104,7 +103,7 @@ impl Parser {
                 }
                 _ => {
                     let mut message = "Unknown language token found. \
-                     Expected either `rs`, `ts`, `cpp`, `c`, or `java` but found "
+                     Expected either `rs`, `ts`, `c`, or `java` but found "
                         .to_string();
                     message.push_str(token.as_str());
                     handle_result_error(MError::ParseError(message));
@@ -133,16 +132,16 @@ impl Parser {
 
         let mut access_given = false;
         let class_access = match token.as_str() {
-            "pub" =>  {
+            "pub" => {
                 self.index += 1;
                 access_given = true;
                 Access::PUBLIC
-            },
+            }
             "priv" => {
                 self.index += 1;
                 access_given = true;
                 Access::PRIVATE
-            },
+            }
             _ => Access::UNDEFINED,
         };
 
@@ -159,8 +158,11 @@ impl Parser {
 
         let class = match self.get_current_class() {
             Some(c) => c,
-            None => Class::new(token.to_string(), self.current_languages.as_ref().unwrap(),
-            class_access),
+            None => Class::new(
+                token.to_string(),
+                self.current_languages.as_ref().unwrap(),
+                class_access,
+            ),
         };
         self.set_current_class(&class);
         self.index += 1;
@@ -180,11 +182,11 @@ impl Parser {
             "priv" => {
                 self.current_field_access = Access::PRIVATE;
                 self.index += 1;
-            },
+            }
             "pub" => {
                 self.current_field_access = Access::PUBLIC;
                 self.index += 1;
-            },
+            }
             _ => self.current_field_access = Access::UNDEFINED,
         }
 
@@ -203,7 +205,8 @@ impl Parser {
             self.set_current_field(&token_cpy);
             self.parse_state = ParseState::FieldN;
         } else if token != "{" {
-            let mut message = "Unknown token found. Expected field or field access token but found '".to_string();
+            let mut message =
+                "Unknown token found. Expected field or field access token but found '".to_string();
             message.push_str(token);
             message.push('\'');
             handle_result_error(MError::ParseError(message));
@@ -296,8 +299,11 @@ impl Parser {
                     panic!()
                 }
             }
-            let field = Field::new(self.get_current_field().unwrap(), field_type,
-                                   self.get_current_filed_access());
+            let field = Field::new(
+                self.get_current_field().unwrap(),
+                field_type,
+                self.get_current_filed_access(),
+            );
             current_class.add_field(&field);
             self.set_current_class(&current_class);
             if is_last_field {

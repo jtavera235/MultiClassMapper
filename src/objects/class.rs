@@ -1,8 +1,7 @@
 use crate::common::handle_result_error;
 use crate::common::MError;
-use crate::models::{ArrayType, FieldType, Language, Access};
+use crate::models::{Access, ArrayType, FieldType, Language};
 use crate::objects::fields::Field;
-use regex::Regex;
 
 #[derive(Clone, Debug)]
 pub struct Class {
@@ -30,7 +29,9 @@ impl Class {
         self.name.clone()
     }
 
-    pub fn get_access(&self) -> Access { self.access.clone() }
+    pub fn get_access(&self) -> Access {
+        self.access.clone()
+    }
 
     pub fn get_java_fields(&self) -> String {
         let mut fields = String::new();
@@ -189,57 +190,6 @@ impl Class {
         fields
     }
 
-    pub fn get_cpp_fields(&self) -> String {
-        let mut fields = String::new();
-        fields.push_str("\n \tpublic: \n \t \t");
-        for n in 0..self.fields.len() {
-            let field = match self.fields.get(n) {
-                Some(f) => f,
-                None => {
-                    let message =
-                        "Error trying to get the fields for the current C++ class".to_string();
-                    handle_result_error(MError::ClassError(message));
-                    panic!()
-                }
-            };
-            match field.get_field_type() {
-                FieldType::STRING => fields.push_str("string"),
-                FieldType::INTEGER => fields.push_str("int"),
-                FieldType::DOUBLE => fields.push_str("double"),
-                FieldType::CHAR => fields.push_str("char"),
-                FieldType::BOOL => fields.push_str("boolean"),
-                FieldType::CUSTOM(name) => {
-                    fields.push_str(name.as_str());
-                }
-                FieldType::ARRAY(ArrayType::INTEGER) => fields.push_str("int*"),
-                FieldType::ARRAY(ArrayType::STRING) => fields.push_str("string"),
-                FieldType::ARRAY(ArrayType::CHAR) => fields.push_str("char*"),
-                FieldType::ARRAY(ArrayType::DOUBLE) => fields.push_str("double*"),
-                FieldType::ARRAY(ArrayType::BOOL) => fields.push_str("boolean*"),
-                FieldType::ARRAY(ArrayType::CUSTOM(name)) => {
-                    fields.push_str(name.as_str());
-                    fields.push('*')
-                }
-                FieldType::LIST(ArrayType::INTEGER) => fields.push_str("vector<int>"),
-                FieldType::LIST(ArrayType::STRING) => fields.push_str("vector<string>"),
-                FieldType::LIST(ArrayType::CHAR) => fields.push_str("vector<char>"),
-                FieldType::LIST(ArrayType::DOUBLE) => fields.push_str("vector<double>"),
-                FieldType::LIST(ArrayType::BOOL) => fields.push_str("vector<boolean>"),
-                FieldType::LIST(ArrayType::CUSTOM(name)) => {
-                    fields.push_str("vector<");
-                    fields.push_str(name.as_str());
-                    fields.push('>')
-                }
-                _ => (),
-            }
-            fields.push(' ');
-            fields.push_str(field.get_name().as_str());
-            fields.push_str(";\n\t\t");
-        }
-        fields.push('\n');
-        fields
-    }
-
     pub fn get_rust_fields(&self) -> String {
         let mut fields = String::new();
         for n in 0..self.fields.len() {
@@ -253,9 +203,8 @@ impl Class {
                 }
             };
             fields.push_str("\n\t");
-            match field.get_access() {
-                Access::PUBLIC => fields.push_str("pub "),
-                _ => (),
+            if let Access::PUBLIC = field.get_access() {
+                fields.push_str("pub ")
             }
             fields.push_str(field.get_name().as_str());
             fields.push_str(": ");
@@ -295,7 +244,4 @@ impl Class {
         fields.push('\n');
         fields
     }
-}
-
-fn camel_case_to_underscore(field: &mut String) {
 }

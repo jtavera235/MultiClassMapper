@@ -1,4 +1,4 @@
-use crate::models::{FieldType, Access};
+use crate::models::{Access, FieldType};
 
 #[derive(Clone, Debug)]
 pub struct Field {
@@ -24,6 +24,7 @@ impl Field {
         self.field_type.clone()
     }
 
-    pub fn get_access(&self) -> Access { self.access.clone() }
-
+    pub fn get_access(&self) -> Access {
+        self.access.clone()
+    }
 }

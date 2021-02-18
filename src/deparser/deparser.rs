@@ -1,5 +1,5 @@
 use crate::common::{create_file, handle_result_error, write_file, MError};
-use crate::models::{Language, Access};
+use crate::models::{Access, Language};
 use crate::objects::Class;
 use colored::Colorize;
 
@@ -36,7 +36,6 @@ impl DeParser {
                     Language::JAVA => (construct_java_class(current_object), ".java"),
                     Language::TYPESCRIPT => (construct_ts_class(current_object), ".ts"),
                     Language::C => (construct_c_structs(current_object), ".c"),
-                    Language::CPP => (construct_cpp_class(current_object), ".cpp"),
                     Language::RUST => (construct_rust_structs(current_object), ".rs"),
                 };
                 let mut file_name = current_object.get_name();
@@ -98,22 +97,10 @@ fn construct_c_structs(class: &Class) -> String {
     output
 }
 
-fn construct_cpp_class(class: &Class) -> String {
-    let mut output = String::new();
-    output.push_str("class ");
-    output.push_str(class.get_name().as_str());
-    output.push_str(" { \n");
-    let class_fields = class.get_cpp_fields();
-    output.push_str(class_fields.as_str());
-    output.push_str("}; \n \n");
-    output
-}
-
 fn construct_rust_structs(class: &Class) -> String {
     let mut output = String::new();
-    match class.get_access() {
-        Access::PUBLIC => output.push_str("pub "),
-        _ => (),
+    if let Access::PUBLIC = class.get_access() {
+        output.push_str("pub ")
     }
     output.push_str("struct ");
     output.push_str(class.get_name().as_str());

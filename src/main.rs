@@ -19,7 +19,7 @@ use common::MError;
 use parser::check_if_brackets_align;
 use std::sync::{Arc, Mutex};
 
-fn ensure_input_is_text_file(file: &String) -> bool {
+fn ensure_input_is_text_file(file: &str) -> bool {
     let file_length = file.len();
     let file_extension_start_index = file_length - 4;
     file[file_extension_start_index..] == *".txt"
@@ -62,8 +62,7 @@ fn main() {
             }
             let mut input_file = open_file(input_string);
             let mut parser = Parser::new();
-            let file_content = get_file_buffer(&mut input_file,
-                                               input_string.as_str());
+            let file_content = get_file_buffer(&mut input_file, input_string.as_str());
             check_if_brackets_align(&file_content);
 
             parser.parse(&file_content);
